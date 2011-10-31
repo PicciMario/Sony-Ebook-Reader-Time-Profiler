@@ -1,0 +1,13 @@
+
+Sony Ebook Reader Time Profiler
+by PicciMario <mario.piccinelli@gmail.com>
+
+Analyzes files cache.xml, cacheExt.xml and media.xml found in
+Sony Ebook Readers and creates a timeline of the events, on the
+console and in a data file which can be used with GnuPlot.
+
+Usage:
+-h              this help
+-p <dir>        a dir to search for archive files (this option can be used many times)
+-s <string>     a specific string to search in ebooks file names
+
