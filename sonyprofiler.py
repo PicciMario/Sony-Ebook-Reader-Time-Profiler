@@ -1,3 +1,17 @@
+#!/usr/bin/env python
+
+"""
+Sony Ebook Reader Time Profiler  
+https://github.com/PicciMario/Sony-Ebook-Reader-Time-Profiler
+Copyright (c) 2011 PicciMario <mario.piccinelli@gmail.com>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+"""
+
 from xml.dom.minidom import *
 import sys, base64, os, getopt
 from datetime import datetime
@@ -17,9 +31,8 @@ enableHistory				= True	# history records from cacheExt.xml
 enableBookmarkMarkups		= True	# boormark markups from cacheExt.xml
 
 # Globals
-#cacheFileDir = "SD/Sony Reader/database/"
-#cacheFileDir = "reader/database/cache/"
 dirs = []
+gnuplot = False
 
 # stringa per la ricerca libri
 findString = ""
@@ -41,11 +54,12 @@ def usage():
 	print("-h              this help")
 	print("-p <dir>        a dir to search for archive files (this option can be used many times)")
 	print("-s <string>     a specific string to search in ebooks file names")
+	print("-g              also writes output in a file \"out.dat\" suitable for being plotted by GnuPlot")
 	print("")
 
 # Command line options parser
 try:
-	opts, args = getopt.getopt(sys.argv[1:], "hp:s:")
+	opts, args = getopt.getopt(sys.argv[1:], "hp:s:g")
 except getopt.GetoptError:
 	usage()
 	sys.exit(0)
@@ -58,6 +72,8 @@ for o,a in opts:
 		dirs.append(a)
 	elif o == "-s":
 		findString = a
+	elif o == "-g":
+		gnuplot = True
 
 # general purpose functions -----------------------------------------------------------------------------------------
 
@@ -425,40 +441,42 @@ for element in sorted(logData, key=lambda data: data[0]):
 
 # GNUPLOT RESULTS ------------------------------------------------------------------------------------------------
 
-# write to file out.dat for gnuplot timeline
-out_file_name = "out.dat"
-out_file = codecs.open(out_file_name, "w", "utf-8")
-
-# create set with file names
-books_set = set([])
-for element in logData:
-	books_set.add(element[2])
-indice = 1
-books = []
-for element in books_set:
-	books.append([indice, element])
-	indice = indice + 1
-
-for element in sorted(logData, key=lambda data: data[0]):	
-
-	bookPath = element[2]
-
-	indice = 0
-	for book in books:
-		if (bookPath == book[1]):
-			indice = book[0]
-			break
-
-	if (maxLengthForBookPath > 0):
-		if (len(bookPath) > maxLengthForBookPath):
-			bookPath = "%s..."%bookPath[0:maxLengthForBookPath]
+if (gnuplot):
+	# write to file out.dat for gnuplot timeline
+	out_file_name = "out.dat"
+	out_file = codecs.open(out_file_name, "w", "utf-8")
 	
-	out_file.write("%s %i \"%s\\n%s\"\n"%(element[0].strftime("%Y-%m-%d-%H:%M:%S"), indice, element[1], bookPath))		
+	# create set with file names
+	books_set = set([])
+	for element in logData:
+		books_set.add(element[2])
+	indice = 1
+	books = []
+	for element in books_set:
+		books.append([indice, element])
+		indice = indice + 1
+	
+	for element in sorted(logData, key=lambda data: data[0]):	
+	
+		bookPath = element[2]
+	
+		indice = 0
+		for book in books:
+			if (bookPath == book[1]):
+				indice = book[0]
+				break
+	
+		if (maxLengthForBookPath > 0):
+			if (len(bookPath) > maxLengthForBookPath):
+				bookPath = "%s..."%bookPath[0:maxLengthForBookPath]
+		
+		out_file.write("%s %i \"%s\\n%s\"\n"%(element[0].strftime("%Y-%m-%d-%H:%M:%S"), indice, element[1], bookPath))		
+	
+	out_file.close()
+	
+	print("\nWritten to gnuplot data file: %s\n"%out_file_name)
+	print("GnuPlot file legend:")
+	for book in books:
+		print("%i\t%s"%(book[0], book[1]))	
 
-out_file.close()
-
-print("\nWritten to gnuplot data file: %s\n"%out_file_name)
-print("GnuPlot file legend:")
-for book in books:
-	print("%i\t%s"%(book[0], book[1]))	
 print("")
